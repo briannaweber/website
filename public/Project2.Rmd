@@ -1,0 +1,217 @@
+---
+title: "Project2"
+author: "Brianna Weber"
+date: "11/25/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr);library(sandwich);library(lmtest);library(carData);
+library(glmnet);library(tidyverse);library(dplyr);library(interactions);library(pROC);library(plotROC)
+```
+
+Brianna Weber BAW2929
+Project 2: Modeling, Testing, and Predicting
+
+
+```{r}
+data("Salaries")
+```
+
+The dataset that I picked for this project is the 'Salaries' dataset within the 'carData' package. This dataset has 397 observations of 6 different variables. These variables are; 'rank','discipline','yrs.service', 'yrs.since.phd','sex', and  'salary.'
+The different levels of rank include Associate professor, Assistant Professor, and Professor. Discipline is broken into two categories, A, "theoretical" departments, and B, "applied" departments. Salary is based on a nine-month salary in dollars. 
+
+##Part 1
+
+```{r}
+ggplot(Salaries, aes(x =yrs.service, y = yrs.since.phd)) +
+  geom_point(alpha = .5) + geom_density_2d(h=2) + coord_fixed() + facet_wrap(~rank)
+
+covmats1<-Salaries%>%group_by(rank)%>%do(covs=cov(.[3:4]))
+  for(i in 1:3){print(covmats1$covs[i])}
+man1<-manova(cbind(yrs.service,yrs.since.phd,salary)~rank, data=Salaries)
+
+summary(man1)
+summary.aov(man1)
+Salaries%>%group_by(rank)%>%summarize(mean(yrs.since.phd),mean(yrs.service))
+
+
+pairwise.t.test(Salaries$yrs.service,Salaries$rank,
+                p.adj="none")
+pairwise.t.test(Salaries$yrs.since.phd,Salaries$rank,
+                p.adj="none")
+pairwise.t.test(Salaries$salary,Salaries$rank,
+                p.adj="none")
+
+
+```
+Since I performed a monova test with three different numerics by a categorical predictor that has three level meaning a total of 13 tests were performed. The adjusted p-value is 0.038 after bonferroni correction. Even with the adjusted significance both salary and years since phd are significant in terms of rank. 
+
+##Part 2
+```{r}
+Salaries%>%group_by(sex)%>%summarize(means=mean(salary))%>%summarize('mean_diff:'=diff(means))
+
+
+
+rand_dist<-vector()
+
+for(i in 1:5000){
+new<-data.frame(salary=sample(Salaries$salary),condition=Salaries$sex) 
+rand_dist[i]<-mean(new[new$condition=="Male",]$salary)-
+              mean(new[new$condition=="Female",]$salary)}
+mean(rand_dist>14088.01)*2
+{hist(rand_dist,main="Mean difference in Salary for Males and Females ",ylab="Frequency"); abline(v=.004,col="red")}
+
+
+t.test(data=Salaries,salary~sex)
+```
+The null hypothesis is there is not a difference in salary mean between males and females. The alternative hypothesis is that there is a difference between salary means for males and females. Based on the results of the randomization test, we fail to reject the null hypothesis. There is not a significant difference in mean salary based on gender. 
+
+
+##Part 3
+```{r}
+Salaries$yrs.since.phd_c<-Salaries$yrs.since.phd-mean(Salaries$yrs.since.phd,na.rm = T)
+Salaries$yrs.service_c<-Salaries$yrs.service-mean(Salaries$yrs.service,na.rm = T)
+Salaries$salary_c<-Salaries$salary-mean(Salaries$salary,na.rm=T)
+fit3<-lm(salary_c~yrs.service_c*yrs.since.phd_c, data=Salaries)
+summary(fit3)
+interact_plot(fit3,yrs.service_c, yrs.since.phd_c)
+Salaries%>%ggplot(aes(yrs.service_c,rank))+geom_point()+geom_smooth(method = 'lm',se=F)
+
+Salaries%>%ggplot(aes(yrs.service_c,yrs.since.phd_c, color=salary_c))+ geom_point() + geom_smooth(method = "lm")
+
+Salaries%>%ggplot(aes(yrs.service_c,salary_c, color=yrs.since.phd_c))+ geom_point() + geom_smooth(method = "lm")
+
+resids<-fit3$residuals
+fitvals<-fit3$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, color='red')
+
+ggplot()+geom_histogram(aes(resids), bins=20)
+ggplot()+geom_qq(aes(sample=resids))+geom_qq_line(aes(sample=resids))
+
+coeftest(fit3)
+coeftest(fit3, vcov = vcovHC(fit3))
+```
+The mean salary with zero years since phD and zero years of service is 9827 dollars. With each year that passes since phD, salary increases by 1056 dollars. For when years since phD and years service, salary decreases by 64 dollars. The normality looks okay overall, it could be better. The homoskedascity could be a lot better too. The model explains for a variance 4096.9 dollars. Even after adding robust standard errors, the variables that were signifcant prior are still significant. The only thing that has change is the standard error which have increased. The variables that were significant were years since phD and the interaction between years in service and years since phD.
+
+
+##Part 4
+```{r}
+
+
+samp_distn<-replicate(1000, {
+ boot_dat<-Salaries[sample(nrow(Salaries),replace=TRUE),]
+ fit<-lm(salary_c~yrs.service_c*yrs.since.phd_c, data=Salaries)
+ coef(fit)
+})
+samp_distn%>%t%>%as.data.frame%>%summarize_all(sd)
+
+do.call(rbind,lapply(samp_distn,unlist))%>%as.data.frame%>%summarize_all(sd,na.rm=T)
+
+```
+
+##Part 5
+```{r}
+fit4<-glm(discipline~salary+yrs.since.phd_c, data=Salaries, family = 'binomial')
+summary(fit4)
+coeftest(fit4)
+exp(coeftest(fit4))
+prob <- predict(fit4, type = "response")
+table(predict = as.numeric(prob > 0.5), truth = Salaries$discipline) %>%
+ addmargins
+
+166/216
+88/181
+166/259
+class_diag <- function(probs, truth) {
+
+ tab <- table(factor(probs > 0.5, levels = c("FALSE", "TRUE")),
+ truth)
+ acc = sum(diag(tab))/sum(tab)
+ sens = tab[2, 2]/colSums(tab)[2]
+ spec = tab[1, 1]/colSums(tab)[1]
+ ppv = tab[2, 2]/rowSums(tab)[2]
+
+ if (is.numeric(truth) == FALSE & is.logical(truth) == FALSE)
+ truth <- as.numeric(truth) - 1
+
+ # CALCULATE EXACT AUC
+ ord <- order(probs, decreasing = TRUE)
+ probs <- probs[ord]
+ truth <- truth[ord]
+
+ TPR = cumsum(truth)/max(1, sum(truth))
+ FPR = cumsum(!truth)/max(1, sum(!truth))
+
+ dup <- c(probs[-1] >= probs[-length(probs)], FALSE)
+ TPR <- c(0, TPR[!dup], 1)
+ FPR <- c(0, FPR[!dup], 1)
+
+ n <- length(TPR)
+ auc <- sum(((TPR[-1] + TPR[-n])/2) * (FPR[-1] - FPR[-n]))
+
+ data.frame(acc, sens, spec, ppv, auc)
+}
+
+class_diag(prob, Salaries$discipline)
+
+ROCplot<-ggplot(fit4)+geom_roc(aes(d = , m = height), n.cuts = 0) 
+ 
+ROCplot<-ggplot(fit4)+geom_roc(aes(d=discipline,m=prob), n.cuts=0) 
+ROCplot
+```
+For each one unit increase of salary from the mean, the odds of being an applied discipline multiplies by 1.00 while for every one unit increase in years since phD the odds multiply by 0.939. After computing the confustion matrix, there seems to be 93 false negatives and 50 false positives. 
+The sensitivity is 0.77, the specificty is 0.49, and the precision is 0.64. The computed sensitivity is 0.769, the specifity is 0.486, the precision is 0.640, and the area under the curve is 0.715 for the cross validation.  With an AUC between .7 and .8 one can conclude that this is fair model at predicting. 
+
+
+##Part 6
+```{r}
+
+disc <- Salaries%>% dplyr::select(-c(rank,sex))
+y <- as.matrix(Salaries$discipline)
+x <- disc %>% dplyr::select(-discipline) %>% mutate_all(scale)%>%as.matrix()
+cv <- cv.glmnet(x, y, family = "binomial")
+
+lasso <- glmnet(x, y, family = "binomial", lambda = cv$lambda.1se)
+coef(lasso)
+ 
+fit5<-glm(discipline~yrs.since.phd_c+salary_c, data=Salaries, family ='binomial')
+summary(fit5)
+prob1 <- predict(fit5, type = "response")
+class_diag <- function(probs, truth) {
+
+ tab <- table(factor(probs > 0.5, levels = c("FALSE", "TRUE")),
+ truth)
+ acc = sum(diag(tab))/sum(tab)
+ sens = tab[2, 2]/colSums(tab)[2]
+ spec = tab[1, 1]/colSums(tab)[1]
+ ppv = tab[2, 2]/rowSums(tab)[2]
+
+ if (is.numeric(truth) == FALSE & is.logical(truth) == FALSE)
+ truth <- as.numeric(truth) - 1
+
+ # CALCULATE EXACT AUC
+ ord <- order(probs, decreasing = TRUE)
+ probs <- probs[ord]
+ truth <- truth[ord]
+
+ TPR = cumsum(truth)/max(1, sum(truth))
+ FPR = cumsum(!truth)/max(1, sum(!truth))
+
+ dup <- c(probs[-1] >= probs[-length(probs)], FALSE)
+ TPR <- c(0, TPR[!dup], 1)
+ FPR <- c(0, FPR[!dup], 1)
+
+ n <- length(TPR)
+ auc <- sum(((TPR[-1] + TPR[-n])/2) * (FPR[-1] - FPR[-n]))
+
+ data.frame(acc, sens, spec, ppv, auc)
+}
+
+class_diag(prob1, Salaries$discipline)
+```
+
+After perfoming a lasso, the variables that were retained since they had non-zero coefficients were years since phD and salary, as well as both those two variables centered from the mean. I reran the regression with those two variables, however those were the ones I had previously picked prior to knowing that they would be significant with lasso. Since those were the variables I had picked prior the accuracy is the same here as it was before. 

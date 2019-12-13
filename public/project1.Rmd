@@ -1,0 +1,141 @@
+---
+title: "Project_One"
+author: "Brianna Weber"
+date: "10/17/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(datasets)
+library(corrplot)
+```
+
+## Project 1
+
+The two datasets that are going to be used are both found within the "dataset" package within R.The first dataset I chose is 'USArrests', this is a data set that has four varibles for each of the fifty US states, these variables are 'Murder', 'Assault', 'UrbanPop', and 'Rape'. Murder, Rape, and Assualt are the number of accounts per 100,000, while UrbanPop is the percent of urban population in that state. All observations for this dataset where taken in 1973. The source of this dataset is the World Almanac and Book of facts 1975(Crime Rates)
+The second dataset I chose was 'state.x77.' This is a dataset of all fifty US states as well and has 8 different variables. These variables are 'Population', an population estimate as of July 1, 1975, 'Income', per capita income in 1974, 'Illiteracy', the percent of the population that is illeterate in 1970, 'Life Expectancy' in years from 1969-1971. There is also 'Murder' which is a count of murder as well as non-negligent manslaughter per 100,000 population in 1976, 'HS Grad', a  percent of high school graduates in 1970, 'Frost', the average number of days in which the temperature was below freezing from the years 1931-1960, and the last variable is 'Area', the area of the state in square miles. The source of this of dataset is the U.S. Department of Commerce, Bureau of the Census (1977).
+
+
+
+I chose these datasets because I believe it will be interesting to see how socio-economic factors affect the amount of crime per state. I am aware that certain factors affect a person's likeliness to engage in deliquency, however I am interested to see if it stays consistant over states. Since both of the datasets have a murder varible, since they are from different years, I am also interested in seeing the rate of change from the three year difference. 
+
+```{R}
+head(USArrests)
+head(state.x77)
+```
+
+### Joining Data Sets
+
+Before I joined the datasets, I wanted to rename the 'Murder' variable so that I know what year each one refers to. I did so by using the function rename() that is part of the dplyr package.
+
+
+I then Joined my dataset using the function cbind(). I chose to do this over a full join because I wanted to keep the name of all the states so that I did not have to re-add them. I also did not want to lose any of the varibles because I am interested in how all the varibles interact. I also did not want to join using the variable 'Murder' since they were from different years and I am interested in seeing the difference between the two years. I also renamed the 'HS Grad' variable so that there would be no space in between, to avoid potential future problems. 
+```{R}
+states<-as.data.frame(state.x77)
+States<-states%>% rename("Murder.1976"=Murder)
+USArrests<-USArrests%>%rename("Murder.1973"=Murder)
+States<-States%>%rename("HS_Grad"= "HS Grad")
+statesarrests<-cbind.data.frame(USArrests,States)
+```
+
+###Wrangling 
+I made a variable for just the state names so I can use this variable to group by later. 
+
+```{R}
+statesssss<-statesarrests
+State_names<-rownames(statesssss)
+rownames(statesssss)<-NULL
+statesarrests<-cbind(State_names,statesssss)
+```
+
+I decided that I wanted to make a variable that showed the change between the two different murder variables, to see if there was and increase or decrease in murder rates from 1973 to 1976. I used the mutate function to do so. 
+
+```{R}
+statesarrests%>%mutate("change_in_murder"=Murder.1973-Murder.1976)%>%arrange(desc(change_in_murder))%>%head
+
+```
+Vermont had the largest decrease in murder from 1973 to 1976 while Florida had the largest increase. 
+
+```{R}
+statesarrests%>%group_by(State_names,Illiteracy)%>%mutate(total_crime=Rape+Assault+Murder.1973+Murder.1976)%>%summarise(mean(total_crime))%>%arrange(desc(Illiteracy))
+```
+```{r}
+statesarrests%>%group_by(State_names,`Life Exp`)%>%mutate(total_crime=Rape+Assault+Murder.1973+Murder.1976)%>%summarise(mean(total_crime))%>%arrange(desc(`Life Exp`))
+```
+```{r}
+statesarrests%>%filter(State_names=="Texas")
+```
+```{R}
+##statesarrests%>%summarize_all(funs(mean=mean),na.rm=T)
+##statesarrests%>%summarize_all(funs(sd=sd),na.rm=T)
+```
+```{R}
+statesarrests%>%select(State_names, Murder.1973,Assault)%>%arrange(desc(Murder.1973))
+```
+  From the first table, you can see that while Louisiana had the highest rate of illiteracy it did not have the highest total crime, in fact Florida had the highest amout of arrests in 1973. From calculting the means of each variable, it is noticible that the arrests for assault are much higher than the arrests for murder and rape. It also apparent that overall the arrests for murder decreased within the three year span the data covers. The percent of population is just above half at 63.54% and the amount of high school graduates are about 50 percent with the mean being 53.11
+  
+I recieved a warning from R for using funs with summarize_all() instead of list, because funs is becoming out-dated. I also recieved a warning when getting the means because I did not exlude the state names therefore it is not a numerical variable. 
+```{R}
+corstates<-statesarrests[2:12]
+statescorplot<-cor(corstates)
+corrplot(statescorplot, method="color",order="hclust")
+```
+
+Before I made the correlation I made a variable that only contained the numeric variable of my dataset so that I could make correlation table as well as correlation plot. 
+I created a correlation plot to see how the different variables interacted, some correlations that can be seen on the plot were not surprising. For example, theres is a correlation between amounts of murder and assault, however I did not expect it to be negative. There is also another strong negative correlation between illiteracy and frost, two variables I would not have thought about having a correlation. I also found it interesting the strong negative correlation between life expectancy and murder rates, perhaps some of the variables that may lead someone to murder may affect one's health.
+
+###Visualization
+
+```{R}
+statesarrests%>%ggplot(aes(Assault))+geom_bar(aes(y=Murder.1973, fill=Rape),stat='identity')+scale_fill_gradient(low="green", high="red")+ggtitle("Relationship between Murder,Rape, and Assault in 1973")+labs(y="Muder Arrests per 100,000", x="Assault Arrests per 100,000 ",fill="Rape Arrests per 100,000")
+
+```
+
+Above is a plot that shows the relationship between counts of assault, rape, and murder in the year 1973. Unsurprisingly, lower counts of arrests for assualt are inpair with lower arrests for murder and rape. It is interesting to see that higher arrest amounts for assault are correlated to higher arrests for rape but not necessarily murder. Also the highest amount of arrests for murder has a fairly high arrest amount for assault, but it is not the highest for assault, and also not remarkably high rape arrests. 
+
+```{R}
+
+ggplot(statesarrests)+geom_bar(aes(UrbanPop,Murder.1973,fill=HS_Grad),stat = 'Summary',fun.y=mean)+scale_fill_gradient(low="blue", high="red")+
+scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+ggtitle("Relationship between Murder, Urban Population, and High School Graduates in 1973")+labs(y="Muder Arrests per 100,000", x="Percent of Urban population")+theme_bw()
+```
+
+Here the plot shows that as urban population increases, so does the rate of graduating from high school. Althought the lowest amount of arrests for murder have high graduation counts, there are very high amount of arrests for murders in places that also have high counts of high school graduates. It is also intersting to see that the highest arrests for murder, and some of the lowest arrest for murder occur when the percent of population is between 55 and 60 percent. 
+
+```{R}
+centersss<-statesarrests%>%mutate(cluster=sample(c('1','2','3'),50,replace = T))%>%group_by(cluster)%>%summarise(Murder.1973=mean(Murder.1973),Assault=mean(Assault))
+
+ggplot(statesarrests)+geom_point(aes(Murder.1973,Assault))+geom_point(data=centersss,aes(Murder.1973, Assault,fill=""),color="black", size=4)+scale_fill_manual(name='cluster',values = 'black')
+
+
+states_no_name<-statesarrests%>%select(Murder.1973,Assault,UrbanPop,Rape,   Population,Income,Illiteracy, 'Life Exp',Murder.1976,HS_Grad,Frost,Area)
+wss<-vector()
+
+for(i in 1:10){
+temp<-statesarrests%>%dplyr::select(Murder.1973,UrbanPop)%>%kmeans(.,i)
+wss[i]<-temp$tot.withinss
+}
+kmeans(states_no_name,3)->results
+ggplot()+geom_point(aes(x=1:10,y=wss))+geom_path(aes(x=1:10,y=wss))+
+  xlab("clusters")+scale_x_continuous(breaks=1:10)
+kmeansss<-states_no_name%>%kmeans(3)
+
+kmeansclust<-states_no_name%>%mutate(cluster=as.factor(kmeansss$cluster))
+kmeansclust%>%ggplot(aes(Murder.1973,`Life Exp`,color=cluster))+geom_point()
+
+kmeansclust%>%ggplot(aes(Murder.1973,`Life Exp`,color=cluster))+geom_point()
+wss1<-vector()
+
+for(i in 1:10){
+temp<-statesarrests%>%dplyr::select(Assault,HS_Grad)%>%kmeans(.,i)
+wss[i]<-temp$tot.withinss
+}
+```
+
+I have tried clustering by several different varibles and by many different amount of clusters, however I could not find a good clusters for my data. I did find however that in every option I tried the one that is in group 2 is always in  its own group not clustered with any other. 

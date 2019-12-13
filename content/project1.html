@@ -1,0 +1,211 @@
+---
+title: "Project_One"
+author: "Brianna Weber"
+date: "10/17/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+
+
+<div id="project-1" class="section level2">
+<h2>Project 1</h2>
+<p>The two datasets that are going to be used are both found within the “dataset” package within R.The first dataset I chose is ‘USArrests’, this is a data set that has four varibles for each of the fifty US states, these variables are ‘Murder’, ‘Assault’, ‘UrbanPop’, and ‘Rape’. Murder, Rape, and Assualt are the number of accounts per 100,000, while UrbanPop is the percent of urban population in that state. All observations for this dataset where taken in 1973. The source of this dataset is the World Almanac and Book of facts 1975(Crime Rates)
+The second dataset I chose was ‘state.x77.’ This is a dataset of all fifty US states as well and has 8 different variables. These variables are ‘Population’, an population estimate as of July 1, 1975, ‘Income’, per capita income in 1974, ‘Illiteracy’, the percent of the population that is illeterate in 1970, ‘Life Expectancy’ in years from 1969-1971. There is also ‘Murder’ which is a count of murder as well as non-negligent manslaughter per 100,000 population in 1976, ‘HS Grad’, a percent of high school graduates in 1970, ‘Frost’, the average number of days in which the temperature was below freezing from the years 1931-1960, and the last variable is ‘Area’, the area of the state in square miles. The source of this of dataset is the U.S. Department of Commerce, Bureau of the Census (1977).</p>
+<p>I chose these datasets because I believe it will be interesting to see how socio-economic factors affect the amount of crime per state. I am aware that certain factors affect a person’s likeliness to engage in deliquency, however I am interested to see if it stays consistant over states. Since both of the datasets have a murder varible, since they are from different years, I am also interested in seeing the rate of change from the three year difference.</p>
+<pre class="r"><code>head(USArrests)</code></pre>
+<pre><code>##            Murder Assault UrbanPop Rape
+## Alabama      13.2     236       58 21.2
+## Alaska       10.0     263       48 44.5
+## Arizona       8.1     294       80 31.0
+## Arkansas      8.8     190       50 19.5
+## California    9.0     276       91 40.6
+## Colorado      7.9     204       78 38.7</code></pre>
+<pre class="r"><code>head(state.x77)</code></pre>
+<pre><code>##            Population Income Illiteracy Life Exp Murder HS Grad Frost
+## Alabama          3615   3624        2.1    69.05   15.1    41.3    20
+## Alaska            365   6315        1.5    69.31   11.3    66.7   152
+## Arizona          2212   4530        1.8    70.55    7.8    58.1    15
+## Arkansas         2110   3378        1.9    70.66   10.1    39.9    65
+## California      21198   5114        1.1    71.71   10.3    62.6    20
+## Colorado         2541   4884        0.7    72.06    6.8    63.9   166
+##              Area
+## Alabama     50708
+## Alaska     566432
+## Arizona    113417
+## Arkansas    51945
+## California 156361
+## Colorado   103766</code></pre>
+<div id="joining-data-sets" class="section level3">
+<h3>Joining Data Sets</h3>
+<p>Before I joined the datasets, I wanted to rename the ‘Murder’ variable so that I know what year each one refers to. I did so by using the function rename() that is part of the dplyr package.</p>
+<p>I then Joined my dataset using the function cbind(). I chose to do this over a full join because I wanted to keep the name of all the states so that I did not have to re-add them. I also did not want to lose any of the varibles because I am interested in how all the varibles interact. I also did not want to join using the variable ‘Murder’ since they were from different years and I am interested in seeing the difference between the two years. I also renamed the ‘HS Grad’ variable so that there would be no space in between, to avoid potential future problems.</p>
+<pre class="r"><code>states&lt;-as.data.frame(state.x77)
+States&lt;-states%&gt;% rename(&quot;Murder.1976&quot;=Murder)
+USArrests&lt;-USArrests%&gt;%rename(&quot;Murder.1973&quot;=Murder)
+States&lt;-States%&gt;%rename(&quot;HS_Grad&quot;= &quot;HS Grad&quot;)
+statesarrests&lt;-cbind.data.frame(USArrests,States)</code></pre>
+<p>###Wrangling
+I made a variable for just the state names so I can use this variable to group by later.</p>
+<pre class="r"><code>statesssss&lt;-statesarrests
+State_names&lt;-rownames(statesssss)
+rownames(statesssss)&lt;-NULL
+statesarrests&lt;-cbind(State_names,statesssss)</code></pre>
+<p>I decided that I wanted to make a variable that showed the change between the two different murder variables, to see if there was and increase or decrease in murder rates from 1973 to 1976. I used the mutate function to do so.</p>
+<pre class="r"><code>statesarrests%&gt;%mutate(&quot;change_in_murder&quot;=Murder.1973-Murder.1976)%&gt;%arrange(desc(change_in_murder))%&gt;%head</code></pre>
+<pre><code>##      State_names Murder.1973 Assault UrbanPop Rape Population Income
+## 1        Florida        15.4     335       80 31.9       8277   4815
+## 2    Mississippi        16.1     259       44 17.1       2341   3098
+## 3        Georgia        17.4     211       60 25.8       4931   4091
+## 4       Maryland        11.3     300       67 27.8       4122   5299
+## 5 South Carolina        14.4     279       48 22.5       2816   3635
+## 6      Louisiana        15.4     249       66 22.2       3806   3545
+##   Illiteracy Life Exp Murder.1976 HS_Grad Frost  Area change_in_murder
+## 1        1.3    70.66        10.7    52.6    11 54090              4.7
+## 2        2.4    68.09        12.5    41.0    50 47296              3.6
+## 3        2.0    68.54        13.9    40.6    60 58073              3.5
+## 4        0.9    70.22         8.5    52.3   101  9891              2.8
+## 5        2.3    67.96        11.6    37.8    65 30225              2.8
+## 6        2.8    68.76        13.2    42.2    12 44930              2.2</code></pre>
+<p>Vermont had the largest decrease in murder from 1973 to 1976 while Florida had the largest increase.</p>
+<pre class="r"><code>statesarrests%&gt;%group_by(State_names,Illiteracy)%&gt;%mutate(total_crime=Rape+Assault+Murder.1973+Murder.1976)%&gt;%summarise(mean(total_crime))%&gt;%arrange(desc(Illiteracy))</code></pre>
+<pre><code>## # A tibble: 50 x 3
+## # Groups:   State_names [50]
+##    State_names    Illiteracy `mean(total_crime)`
+##    &lt;fct&gt;               &lt;dbl&gt;               &lt;dbl&gt;
+##  1 Louisiana             2.8               300. 
+##  2 Mississippi           2.4               305. 
+##  3 South Carolina        2.3               328. 
+##  4 New Mexico            2.2               338. 
+##  5 Texas                 2.2               251. 
+##  6 Alabama               2.1               286. 
+##  7 Georgia               2                 268. 
+##  8 Arkansas              1.9               228. 
+##  9 Hawaii                1.9                77.7
+## 10 Arizona               1.8               341. 
+## # ... with 40 more rows</code></pre>
+<pre class="r"><code>statesarrests%&gt;%group_by(State_names,`Life Exp`)%&gt;%mutate(total_crime=Rape+Assault+Murder.1973+Murder.1976)%&gt;%summarise(mean(total_crime))%&gt;%arrange(desc(`Life Exp`))</code></pre>
+<pre><code>## # A tibble: 50 x 3
+## # Groups:   State_names [50]
+##    State_names  `Life Exp` `mean(total_crime)`
+##    &lt;fct&gt;             &lt;dbl&gt;               &lt;dbl&gt;
+##  1 Hawaii             73.6                77.7
+##  2 Minnesota          73.0                91.9
+##  3 Utah               72.9               151. 
+##  4 North Dakota       72.8                54.5
+##  5 Nebraska           72.6               126. 
+##  6 Kansas             72.6               144. 
+##  7 Iowa               72.6                71.8
+##  8 Connecticut        72.5               127. 
+##  9 Wisconsin          72.5                69.4
+## 10 Oregon             72.1               197. 
+## # ... with 40 more rows</code></pre>
+<pre class="r"><code>statesarrests%&gt;%filter(State_names==&quot;Texas&quot;)</code></pre>
+<pre><code>##   State_names Murder.1973 Assault UrbanPop Rape Population Income
+## 1       Texas        12.7     201       80 25.5      12237   4188
+##   Illiteracy Life Exp Murder.1976 HS_Grad Frost   Area
+## 1        2.2     70.9        12.2    47.4    35 262134</code></pre>
+<pre class="r"><code>##statesarrests%&gt;%summarize_all(funs(mean=mean),na.rm=T)
+##statesarrests%&gt;%summarize_all(funs(sd=sd),na.rm=T)</code></pre>
+<pre class="r"><code>statesarrests%&gt;%select(State_names, Murder.1973,Assault)%&gt;%arrange(desc(Murder.1973))</code></pre>
+<pre><code>##       State_names Murder.1973 Assault
+## 1         Georgia        17.4     211
+## 2     Mississippi        16.1     259
+## 3         Florida        15.4     335
+## 4       Louisiana        15.4     249
+## 5  South Carolina        14.4     279
+## 6         Alabama        13.2     236
+## 7       Tennessee        13.2     188
+## 8  North Carolina        13.0     337
+## 9           Texas        12.7     201
+## 10         Nevada        12.2     252
+## 11       Michigan        12.1     255
+## 12     New Mexico        11.4     285
+## 13       Maryland        11.3     300
+## 14       New York        11.1     254
+## 15       Illinois        10.4     249
+## 16         Alaska        10.0     263
+## 17       Kentucky         9.7     109
+## 18     California         9.0     276
+## 19       Missouri         9.0     178
+## 20       Arkansas         8.8     190
+## 21       Virginia         8.5     156
+## 22        Arizona         8.1     294
+## 23       Colorado         7.9     204
+## 24     New Jersey         7.4     159
+## 25           Ohio         7.3     120
+## 26        Indiana         7.2     113
+## 27        Wyoming         6.8     161
+## 28       Oklahoma         6.6     151
+## 29   Pennsylvania         6.3     106
+## 30         Kansas         6.0     115
+## 31        Montana         6.0     109
+## 32       Delaware         5.9     238
+## 33  West Virginia         5.7      81
+## 34         Hawaii         5.3      46
+## 35         Oregon         4.9     159
+## 36  Massachusetts         4.4     149
+## 37       Nebraska         4.3     102
+## 38     Washington         4.0     145
+## 39   South Dakota         3.8      86
+## 40   Rhode Island         3.4     174
+## 41    Connecticut         3.3     110
+## 42           Utah         3.2     120
+## 43      Minnesota         2.7      72
+## 44          Idaho         2.6     120
+## 45      Wisconsin         2.6      53
+## 46           Iowa         2.2      56
+## 47        Vermont         2.2      48
+## 48          Maine         2.1      83
+## 49  New Hampshire         2.1      57
+## 50   North Dakota         0.8      45</code></pre>
+<p>From the first table, you can see that while Louisiana had the highest rate of illiteracy it did not have the highest total crime, in fact Florida had the highest amout of arrests in 1973. From calculting the means of each variable, it is noticible that the arrests for assault are much higher than the arrests for murder and rape. It also apparent that overall the arrests for murder decreased within the three year span the data covers. The percent of population is just above half at 63.54% and the amount of high school graduates are about 50 percent with the mean being 53.11</p>
+<p>I recieved a warning from R for using funs with summarize_all() instead of list, because funs is becoming out-dated. I also recieved a warning when getting the means because I did not exlude the state names therefore it is not a numerical variable.</p>
+<pre class="r"><code>corstates&lt;-statesarrests[2:12]
+statescorplot&lt;-cor(corstates)
+corrplot(statescorplot, method=&quot;color&quot;,order=&quot;hclust&quot;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Before I made the correlation I made a variable that only contained the numeric variable of my dataset so that I could make correlation table as well as correlation plot.
+I created a correlation plot to see how the different variables interacted, some correlations that can be seen on the plot were not surprising. For example, theres is a correlation between amounts of murder and assault, however I did not expect it to be negative. There is also another strong negative correlation between illiteracy and frost, two variables I would not have thought about having a correlation. I also found it interesting the strong negative correlation between life expectancy and murder rates, perhaps some of the variables that may lead someone to murder may affect one’s health.</p>
+<p>###Visualization</p>
+<pre class="r"><code>statesarrests%&gt;%ggplot(aes(Assault))+geom_bar(aes(y=Murder.1973, fill=Rape),stat=&#39;identity&#39;)+scale_fill_gradient(low=&quot;green&quot;, high=&quot;red&quot;)+ggtitle(&quot;Relationship between Murder,Rape, and Assault in 1973&quot;)+labs(y=&quot;Muder Arrests per 100,000&quot;, x=&quot;Assault Arrests per 100,000 &quot;,fill=&quot;Rape Arrests per 100,000&quot;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>Above is a plot that shows the relationship between counts of assault, rape, and murder in the year 1973. Unsurprisingly, lower counts of arrests for assualt are inpair with lower arrests for murder and rape. It is interesting to see that higher arrest amounts for assault are correlated to higher arrests for rape but not necessarily murder. Also the highest amount of arrests for murder has a fairly high arrest amount for assault, but it is not the highest for assault, and also not remarkably high rape arrests.</p>
+<pre class="r"><code>ggplot(statesarrests)+geom_bar(aes(UrbanPop,Murder.1973,fill=HS_Grad),stat = &#39;Summary&#39;,fun.y=mean)+scale_fill_gradient(low=&quot;blue&quot;, high=&quot;red&quot;)+
+scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+scale_y_continuous(breaks = scales::pretty_breaks(n = 10))+ggtitle(&quot;Relationship between Murder, Urban Population, and High School Graduates in 1973&quot;)+labs(y=&quot;Muder Arrests per 100,000&quot;, x=&quot;Percent of Urban population&quot;)+theme_bw()</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Here the plot shows that as urban population increases, so does the rate of graduating from high school. Althought the lowest amount of arrests for murder have high graduation counts, there are very high amount of arrests for murders in places that also have high counts of high school graduates. It is also intersting to see that the highest arrests for murder, and some of the lowest arrest for murder occur when the percent of population is between 55 and 60 percent.</p>
+<pre class="r"><code>centersss&lt;-statesarrests%&gt;%mutate(cluster=sample(c(&#39;1&#39;,&#39;2&#39;,&#39;3&#39;),50,replace = T))%&gt;%group_by(cluster)%&gt;%summarise(Murder.1973=mean(Murder.1973),Assault=mean(Assault))
+
+ggplot(statesarrests)+geom_point(aes(Murder.1973,Assault))+geom_point(data=centersss,aes(Murder.1973, Assault,fill=&quot;&quot;),color=&quot;black&quot;, size=4)+scale_fill_manual(name=&#39;cluster&#39;,values = &#39;black&#39;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>states_no_name&lt;-statesarrests%&gt;%select(Murder.1973,Assault,UrbanPop,Rape,   Population,Income,Illiteracy, &#39;Life Exp&#39;,Murder.1976,HS_Grad,Frost,Area)
+wss&lt;-vector()
+
+for(i in 1:10){
+temp&lt;-statesarrests%&gt;%dplyr::select(Murder.1973,UrbanPop)%&gt;%kmeans(.,i)
+wss[i]&lt;-temp$tot.withinss
+}
+kmeans(states_no_name,3)-&gt;results
+ggplot()+geom_point(aes(x=1:10,y=wss))+geom_path(aes(x=1:10,y=wss))+
+  xlab(&quot;clusters&quot;)+scale_x_continuous(breaks=1:10)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
+<pre class="r"><code>kmeansss&lt;-states_no_name%&gt;%kmeans(3)
+
+kmeansclust&lt;-states_no_name%&gt;%mutate(cluster=as.factor(kmeansss$cluster))
+kmeansclust%&gt;%ggplot(aes(Murder.1973,`Life Exp`,color=cluster))+geom_point()</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-13-3.png" width="672" /></p>
+<pre class="r"><code>kmeansclust%&gt;%ggplot(aes(Murder.1973,`Life Exp`,color=cluster))+geom_point()</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-13-4.png" width="672" /></p>
+<pre class="r"><code>wss1&lt;-vector()
+
+for(i in 1:10){
+temp&lt;-statesarrests%&gt;%dplyr::select(Assault,HS_Grad)%&gt;%kmeans(.,i)
+wss[i]&lt;-temp$tot.withinss
+}</code></pre>
+<p>I have tried clustering by several different varibles and by many different amount of clusters, however I could not find a good clusters for my data. I did find however that in every option I tried the one that is in group 2 is always in its own group not clustered with any other.</p>
+</div>
+</div>
