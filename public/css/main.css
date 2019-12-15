@@ -100,7 +100,7 @@ html, body {
   display: block;
   height: auto;
   margin: 2rem auto;
-  max-width: 100%;
+  max-width: 10%;
 }
 .panel-default h4 {
   text-align: left;
