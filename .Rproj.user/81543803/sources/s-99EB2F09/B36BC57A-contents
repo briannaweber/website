@@ -1,3 +1,4 @@
 
 blogdown::install_hugo(extended = F)
 blogdown::serve_site()
+servr::daemon_stop(7)
