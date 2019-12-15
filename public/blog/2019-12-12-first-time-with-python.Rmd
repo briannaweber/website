@@ -11,5 +11,6 @@ When professor Woodward said that we would be learning python, I was very appreh
 I felt as though it took me a very long time to get a very basic understanding of R and R studio. Needless to say I was not excited about having to learn a second coding language.
 While there were a few small differences between R and python that would makes a large difference in the output to get used to I did not find python as difficult as I had expected. 
 
-
+The python code that I enjoyed the most learning was about the needleman-wunsch test. I felt that it would be most applicable to my potential future career. 
+We first did the test by had but then were about to double check our scores by creating a function in python. We also created a function that would give us the smith waterman scores. 
 ```
