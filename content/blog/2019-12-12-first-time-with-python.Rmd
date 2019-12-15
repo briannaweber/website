@@ -11,45 +11,5 @@ When professor Woodward said that we would be learning python, I was very appreh
 I felt as though it took me a very long time to get a very basic understanding of R and R studio. Needless to say I was not excited about having to learn a second coding language.
 While there were a few small differences between R and python that would makes a large difference in the output to get used to I did not find python as difficult as I had expected. 
 
-```{python}
-import numpy as np
 
-# Use these values to calculate scores
-match_score = 2
-mismatch_score = -1
-gap_penalty = -1
-
-# Make a score matrix with these two sequences
-seq1 = "ATGAT"
-seq2 = "AAGGAT"
-
-
-def sw_function(seq1,seq2,gap_penalty=-1, match_score=1, mismatch_score=-1):
-    m=len(seq1) #length of horizontal sequence
-    n=len(seq2) #length of vertical sequence
-    score=np.empty(shape=[n+1,m+1]) #array to hold scores
-   
-    for j in range(0, m + 1): score[0][j] = gap_penalty * j
-    for i in range(0, n + 1): score[i][0] = gap_penalty * i
-    
-    for i in range(1, n + 1): 
-        for j in range(1, m + 1):
-            insert = score[i - 1][j] + gap_penalty 
-            delete = score[i][j - 1] + gap_penalty 
-            match = score[i - 1][j - 1] + match_score if seq1[j-1]==seq2[i-1] else mismatch_score
-            score[i][j] = max(match, delete, insert)
-    return score
-
-
-mat=sw_function(seq1,seq2,gap_penalty,match_score,mismatch_score)
-
-def sw_fun(mat):
-    for i in range(len(mat)):
-        for j in range(len(mat[i])):
-            if mat[i][j]<0: 
-                mat[i][j]=0
-            
-    return mat
-
-sw_fun(mat)
 ```
