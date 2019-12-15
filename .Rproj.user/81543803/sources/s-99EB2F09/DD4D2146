@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1576443258415.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3354495309",
+    "id" : "DD4D2146",
+    "lastKnownWriteTime" : 1576443292,
+    "last_content_update" : 1576443292310,
+    "path" : "~/Fall 2019/Computational Biology and Bioinformatics/bloggg.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "58,11",
+        "scrollLine" : "42",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
